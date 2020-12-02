@@ -19,14 +19,14 @@ const executeGitHubAction = async () => {
     wantedEcrRepo = await ecr.send(new DescribeRepositoriesCommand({repositoryNames: [ecrRepoName]}))
     wantedEcrRepo = wantedEcrRepo.repositories[0];
 
-    core.info(`ECR repo '${ecrRepoName}' exists already.`);
+    core.info(`ECR repo '${ecrRepoName}' already exists.`);
     // TODO check repo lifecycle policy
   } catch (error) {
     if (error.name !== 'RepositoryNotFoundException') {
       throw error;
     }
 
-    core.info(`ECR repo '${ecrRepoName}' did't exists.`);
+    core.info(`ECR repo '${ecrRepoName}' does not exist.`);
     wantedEcrRepo = await createNewEcrRepo(ecrRepoName);
     wantedEcrRepo = wantedEcrRepo.repository;
     await setupLifecyclePolicy(ecrRepoName);

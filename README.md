@@ -1,31 +1,27 @@
 # aws-ecr-create-repository
 
-GitHub action that creates AWS ECR repository if not available.
+This GitHub action creates a new AWS ECR repository.
+
+In case a ECR repository with the same name already exists, it will exit.
+The name for the AWS ECR repository can be specified or it will fallback to the current git repository name.
+On creation a lifecycle is added that removes untagged images after 30 days.
 
 ## Usage
 
-This action checks if wanted ECR repository exists.
-If the ECR repository is not existent then the GitHub action creates one and sets lifecycle.
-If repository is already existent then nothing else happens.
-Outputs are set in any case.
+The action uses defaults, that allow usage without custom configuration.
 
-## Examples
+### Create ECR repo with default name
 
-### Check and create ECR repo with default name
-
-This is the most easy example:
+This is the most simple example.
+It will create a ECR repository using the git repository's name.
 
 ```yaml
       - uses: @2iq/aws-ecr-create-repository@v1
 ```
 
-Because `ecr-name` was not provided the GitHub Action will take default name.
-Default name is the name of git repo (without organization) where action is running.
-You can also use custom ECR name as example below shows.
-
 ### Create ECR repo with custom name
 
-This is example with custom ECR name:
+A custom name can set with the property `ecr-name`.
 
 ```yaml
       - uses: @2iq/aws-ecr-create-repository@v1
@@ -77,15 +73,14 @@ jobs:
 
 ### `ecr-name`
 
-**Required** The name ECR repository that needs to be created if not existent.
-    Default: name of git repository where action is executed.
+The ECR repository name is optional.
+It will fallback to the name of git repository where action is executed from.
 
 ## Outputs
 
 ### `ecr-name`
 
-The name of the ECR repository.
-Same as `ecr-name` in inputs.
+The name of the ECR repository; `ecr-name` from inputs.
 
 Examples: `my-custom-ecr-repo-name`, `aws-ecr-create-repository`, `foo`
 
@@ -101,9 +96,9 @@ The URI of the ECR repository.
 
 Example: `123456789012.dkr.ecr.eu-central-1.amazonaws.com/my-custom-ecr-repo-name`
 
-## Needed IAM permissions
+## Permissions
 
-The action needs follows IAM permission to work properly:
+The action needs the following IAM permission to work properly:
 
 ```json
 {

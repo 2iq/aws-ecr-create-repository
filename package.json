@@ -1,7 +1,7 @@
 {
   "name": "@2iq/aws-ecr-create-repository",
   "version": "1.0.0",
-  "description": "GitHub action that creates AWS ECR repository if not available.",
+  "description": "GitHub action that creates new AWS ECR repository.",
   "main": "index.js",
   "scripts": {
     "build": "ncc build index.js --license licenses.txt --out lib",

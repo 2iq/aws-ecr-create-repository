@@ -6,8 +6,8 @@ branding:
 inputs:
   ecr-name:
     description: >
-      Name of repository that will be created if not already exists.
-      If not provided then name of git repository where action is executed is used.
+      Name of the repository.
+      If not provided, the current git repository name is used.
     required: false
 outputs:
   ecr-name:
