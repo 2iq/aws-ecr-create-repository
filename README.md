@@ -69,6 +69,16 @@ jobs:
       # ...
 ```
 
+### Run without GitHub Actions
+
+You can also run it locally on your CLI.
+
+This example shows how to run it on fishshell:
+
+```sh
+env INPUT_ECR-NAME=foobar node index.js;
+```
+
 ## Inputs
 
 ### `ecr-name`
