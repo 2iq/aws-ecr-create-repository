@@ -29,7 +29,7 @@ const executeGitHubAction = async () => {
     core.info(`ECR repo '${ecrRepoName}' does not exist.`);
     wantedEcrRepo = await createNewEcrRepo(ecrRepoName);
     wantedEcrRepo = wantedEcrRepo.repository;
-    await setupLifecyclePolicy(ecrRepoName);
+    await setupPermissions(ecrRepoName);
   }
 
   core.setOutput('ecr-name', wantedEcrRepo.repositoryName);
@@ -43,37 +43,42 @@ const createNewEcrRepo = async (repoName) => {
   const params = {
     "repositoryName": repoName,
     "imageScanningConfiguration": {
-      "scanOnPush": true
+      "scanOnPush": false
     }
   };
   return await ecr.send(new CreateRepositoryCommand(params));
 };
 
-const setupLifecyclePolicy = async (repoName) => {
-  core.info(`Set lifecycle to ECR repo '${repoName}'.`);
-
-  const lifecyclePolicy = {
-    "rules": [{
-      "rulePriority": 1,
-      "description": "Expire images older than 30 days",
-      "selection": {
-        "tagStatus": "untagged",
-        "countType": "sinceImagePushed",
-        "countUnit": "days",
-        "countNumber": 30
-      },
-      "action": {
-        "type": "expire"
+const setupPermissions = async (repoName) => {
+  core.info(`Set policy permission to ECR repo '${repoName}'.`);
+  const policy = {
+    "Version": "2008-10-17",
+    "Statement": [
+      {
+        "Sid": "AllowCrossAccountPull",
+        "Effect": "Allow",
+        "Principal": {
+          "AWS": [
+            "arn:aws:iam::933342162591:root",
+            "arn:aws:iam::931137651704:root",
+            "arn:aws:iam::001802907465:root"
+          ]
+        },
+        "Action": [
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:BatchGetImage",
+          "ecr:GetDownloadUrlForLayer"
+        ]
       }
-    }]
+    ]
   };
 
   const params = {
     "repositoryName": repoName,
-    "lifecyclePolicyText": JSON.stringify(lifecyclePolicy)
+    "policyText": JSON.stringify(policy)
   };
-  await ecr.send(new PutLifecyclePolicyCommand(params));
-};
+  await ecr.send(new SetRepositoryPolicyRequest(params));
+}
 
 module.exports = {
   executeGitHubAction: executeGitHubAction
