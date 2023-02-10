@@ -4,7 +4,7 @@ const {
   ECR,
   DescribeRepositoriesCommand,
   CreateRepositoryCommand,
-  PutRegistryPolicyCommand
+  SetRepositoryPolicyCommand
 } = require('@aws-sdk/client-ecr');
 
 const ecr = new ECR();
@@ -79,7 +79,7 @@ const setupPermissions = async (repoName, pullAccountIds) => {
     "repositoryName": repoName,
     "policyText": JSON.stringify(policy)
   };
-  await ecr.send(new PutRegistryPolicyCommand(params));
+  await ecr.send(new SetRepositoryPolicyCommand(params));
 }
 
 module.exports = {
