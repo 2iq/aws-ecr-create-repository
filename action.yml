@@ -13,8 +13,7 @@ inputs:
     description: >
       AWS Account Ids with access to pull images
       If not provided, no cross account policy is created.
-    default: "933342162591,931137651704,001802907465,495859293948"
-    required: false
+    required: true
 outputs:
   ecr-name:
     description: The name of the ECR repository. Same as `ecr-name` in inputs.
