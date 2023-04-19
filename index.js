@@ -16,11 +16,10 @@ const executeGitHubAction = async () => {
 
   try {
     core.info(`Checking ECR repo '${ecrRepoName}'.`);
-    wantedEcrRepo = await ecr.send(new DescribeRepositoriesCommand({repositoryNames: [ecrRepoName]}))
+    wantedEcrRepo = await ecr.send(new DescribeRepositoriesCommand({ repositoryNames: [ecrRepoName] }))
     wantedEcrRepo = wantedEcrRepo.repositories[0];
 
     core.info(`ECR repo '${ecrRepoName}' already exists.`);
-    // TODO check repo lifecycle policy
   } catch (error) {
     if (error.name !== 'RepositoryNotFoundException') {
       throw error;
@@ -29,10 +28,9 @@ const executeGitHubAction = async () => {
     core.info(`ECR repo '${ecrRepoName}' does not exist.`);
     wantedEcrRepo = await createNewEcrRepo(ecrRepoName);
     wantedEcrRepo = wantedEcrRepo.repository;
-    if (pullAccountIds) {
-      await setupPermissions(ecrRepoName, pullAccountIds);
-    }
   }
+
+  await updateLifecyclePolicyIfRequired(ecrRepoName, pullAccountIds);
 
   core.setOutput('ecr-name', wantedEcrRepo.repositoryName);
   core.setOutput('ecr-arn', wantedEcrRepo.repositoryArn);
@@ -51,11 +49,13 @@ const createNewEcrRepo = async (repoName) => {
   return await ecr.send(new CreateRepositoryCommand(params));
 };
 
-const setupPermissions = async (repoName, pullAccountIds) => {
-  core.info(`Set policy permission to ECR repo '${repoName}'.`);
+const updateLifecyclePolicyIfRequired = async (repoName, pullAccountIds) => {
+
   const principals = pullAccountIds.split(',').map((id) => {
     return `arn:aws:iam::${id.trim()}:root`;
   });
+  principals.sort();
+
   const policy = {
     "Version": "2008-10-17",
     "Statement": [
@@ -74,12 +74,37 @@ const setupPermissions = async (repoName, pullAccountIds) => {
     ]
   };
 
-  core.info(JSON.stringify(policy));
-  const params = {
-    "repositoryName": repoName,
-    "policyText": JSON.stringify(policy)
-  };
-  await ecr.send(new SetRepositoryPolicyCommand(params));
+  let newPolicyText = JSON.stringify(policy);
+  let updateLifecyclePolicy = false;
+
+  // Do we need to update LifeCycle Policy?
+  try {
+    r = await ecr.getRepositoryPolicy({ repositoryName: repoName })
+    let oldPolicyText = JSON.stringify(JSON.parse(r.policyText))
+
+    // Update only if Policy changed
+    if (oldPolicyText !== newPolicyText) {
+      updateLifecyclePolicy = true;
+    }
+
+  } catch (error) {
+    if (error.name !== 'RepositoryPolicyNotFoundException') {
+      throw error;
+    }
+
+    // OR if no Policy available yet
+    updateLifecyclePolicy = true;
+  }
+
+  if (updateLifecyclePolicy && principals.length > 0) {
+    core.info(`Set policy permission to ECR repo '${repoName}':`);
+    core.info(newPolicyText);
+    const params = {
+      "repositoryName": repoName,
+      "policyText": newPolicyText
+    };
+    await ecr.send(new SetRepositoryPolicyCommand(params));
+  }
 }
 
 module.exports = {
