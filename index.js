@@ -26,7 +26,8 @@ const executeGitHubAction = async () => {
     }
 
     core.info(`ECR repo '${ecrRepoName}' does not exist.`);
-    wantedEcrRepo = await createNewEcrRepo(ecrRepoName);
+    const tags = [ { "Key": "c-service", "Value": ecrRepoName }];
+    wantedEcrRepo = await createNewEcrRepo(ecrRepoName, tags);
     wantedEcrRepo = wantedEcrRepo.repository;
   }
 
@@ -37,14 +38,15 @@ const executeGitHubAction = async () => {
   core.setOutput('ecr-uri', wantedEcrRepo.repositoryUri);
 };
 
-const createNewEcrRepo = async (repoName) => {
+const createNewEcrRepo = async (repoName, tags) => {
   core.info(`Create new ECR repo '${repoName}'.`);
 
   const params = {
     "repositoryName": repoName,
     "imageScanningConfiguration": {
       "scanOnPush": false
-    }
+    },
+    "tags": tags
   };
   return await ecr.send(new CreateRepositoryCommand(params));
 };
